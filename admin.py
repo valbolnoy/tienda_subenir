@@ -8,7 +8,8 @@ productos = [
 ]
 
 productos = sorted(productos, key=lambda x: x["nombre"])
-
+    #extrae el campo nombre y ordena por ese campo
+    
 # Búsqueda binaria recursiva
 def buscar_producto(productos, nombre, inicio=0, fin=None):
     if fin is None:
