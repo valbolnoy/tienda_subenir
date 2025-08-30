@@ -80,25 +80,6 @@ def calcular_promedios(items, resultado=None):
     return calcular_promedios(items[1:], resultado)
     
 
-
-def quicksort_precio(productos, ascendente=True):
-    if len(productos) <= 1:
-        return productos
-
-    pivote = productos[0]
-
-    def dividir(resto, menores=None, mayores=None):
-        if menores is None: menores, mayores = [], []
-        if not resto:  
-            return menores, mayores
-        cabeza, *cola = resto
-        (menores if cabeza["precio"] <= pivote["precio"] else mayores).append(cabeza)
-        return dividir(cola, menores, mayores)
-
-    menores, mayores = dividir(productos[1:])
-    ordenados = quicksort_precio(menores, ascendente) + [pivote] + quicksort_precio(mayores, ascendente)
-    return ordenados if ascendente else ordenados[::-1]
-
 def buscar_por_rango(productos, minimo, maximo, i=0):
     if i == len(productos):
         return [] 
@@ -123,7 +104,6 @@ def menu():
     print("1. Ver precio total")
     print("2. Ver promedio por categoría")
     print("3. Buscar producto por nombre")
-    print("4. Buscar productos por rango de precios")
     print("5. Recomendar productos de la misma categoría")
     print("6. Salir")
 
@@ -147,18 +127,6 @@ def menu():
             print(f" Encontrado: {resultado['nombre']} - ${resultado['precio']}")
         else:
             print(" Producto no encontrado.")
-        return menu()
-
-    if opcion == "4":
-        minimo = int(input("🔽 Precio mínimo: "))
-        maximo = int(input("🔼 Precio máximo: "))
-        encontrados = buscar_por_rango(productos, minimo, maximo)
-        if encontrados:
-            print("\n Productos encontrados:")
-            for p in encontrados:
-                print(f"   {p['nombre']} - ${p['precio']}")
-        else:
-            print(" No hay productos en ese rango.")
         return menu()
 
     if opcion == "5":
