@@ -1,157 +1,236 @@
+class Queue:
+    def __init__(self):
+        self.__list = []
 
-productos = [
-    {"codigo": "P001", "nombre": "Artesanía Wayuu", "categoria": "artesanías", "precio": 35000},
-    {"codigo": "P002", "nombre": "Camisa Colombia", "categoria": "ropa", "precio": 55000},
-    {"codigo": "P003", "nombre": "Gorra Tricolor", "categoria": "accesorios", "precio": 25000},
-    {"codigo": "P004", "nombre": "Imán Bogotá", "categoria": "imanes", "precio": 10000},
-    {"codigo": "P005", "nombre": "Sombrero Vueltiao", "categoria": "artesanías", "precio": 80000}
-]
+    def __str__(self):
+        return '--'.join(map(str, self.__list))
+
+    def enqueue(self, e):
+        self.__list.append(e)
+        return True
+
+    def dequeue(self):
+        if self.is_empty():
+            return None
+        return self.__list.pop(0)
+
+    def first(self):
+        if self.is_empty():
+            return None
+        return self.__list[0]
+
+    def is_empty(self):
+        return len(self.__list) == 0
+
+    def len(self):
+        return len(self.__list)
 
 
-productos = sorted(productos, key=lambda x: x["nombre"])
+class Stack:
+    def __init__(self):
+        self.__list = []
 
-def buscar_producto(productos, nombre, inicio=0, fin=None):
-    if fin is None:         
-        fin = len(productos) - 1  
-    if inicio > fin: 
-        return None
+    def __str__(self):
+        return '--'.join(map(str, reversed(self.__list)))
+
+    def push(self, e):
+        self.__list.append(e)
+        return True
+
+    def pop(self):
+        if self.is_empty():
+            return None
+        return self.__list.pop()
+
+    def top(self):
+        if self.is_empty():
+            return None
+        return self.__list[-1]
+
+    def is_empty(self):
+        return len(self.__list) == 0
+
+    def len(self):
+        return len(self.__list)
+
+
+#-----------------------------
+class Atraccion:
+    def __init__(self, nombre, capacidad):
+        self.nombre = nombre
+        self.capacidad = capacidad 
+        self.visitantes = Stack()  
+
+    def agregar_visitante(self, visitante):
+        self.visitantes.push(visitante)  
+
+    def procesar_turno(self):
+        procesados = []
+        for _ in range(self.capacidad):
+            if not self.visitantes.is_empty():
+                procesados.append(self.visitantes.pop())
+        return procesados  
+
+    def __str__(self):
+        return f"{self.nombre}: {self.visitantes}" 
+
+
+class ParqueDiversiones:
+    def __init__(self):
+        self.atracciones = Queue() 
+        self.atracciones.enqueue(Atraccion("Montaña Rusa", 3))
+        self.atracciones.enqueue(Atraccion("Carros Chocones", 2))  
+        self.atracciones.enqueue(Atraccion("Rueda de la Fortuna", 2))
+        self.atracciones.enqueue(Atraccion("Casa del Terror", 2))
+
+    def agregar_visitante(self, visitante):
+        primera = self.atracciones.first()  
+        if primera:
+            primera.agregar_visitante(visitante) 
+
+    def ejecutar_turno(self):
+        print("\n--- Ejecutando Turno ---")
+        procesados_siguiente = [] 
+        nueva_cola = Queue()  
+
+        while not self.atracciones.is_empty():
+            atraccion = self.atracciones.dequeue()   
+
+            for v in procesados_siguiente:
+                atraccion.agregar_visitante(v)
+            procesados_siguiente = []  
+            procesados = atraccion.procesar_turno() 
+            procesados_siguiente = procesados
+
+            print(f"{atraccion.nombre} -> Procesados: {procesados}, "
+                  f"En espera: {atraccion.visitantes}")
+
+            nueva_cola.enqueue(atraccion) 
+
+        self.atracciones = nueva_cola
+
+    def ejecutar_todo(self):
+        turno = 1 
+        while self.hay_visitantes():
+            print(f"\n=== TURNO {turno} ===") 
+            self.ejecutar_turno() 
+            turno += 1 
+        print("\n Todos los visitantes han salido del parque.")
+
+    def estado(self):
+        print("\n--- Estado del Sistema ---")
+        temporal = Queue() 
+
+        while not self.atracciones.is_empty():
+            atraccion_actual = self.atracciones.dequeue() 
+            print(atraccion_actual)
+            temporal.enqueue( atraccion_actual)
+
+      
+        self.atracciones = temporal   
+
+    def hay_visitantes(self, temp=None):
+     if temp is None:
+        temp = Queue()
+
+     if self.atracciones.is_empty():
+        self.atracciones = temp  
+        return False
+
     
-    medio = (inicio + fin) // 2  
-    actual = productos[medio]["nombre"]   
+     atraccion_actual = self.atracciones.dequeue()  
+     temp.enqueue(atraccion_actual)
 
-    if actual.lower().strip() == nombre.lower().strip(): 
-        return productos[medio]     
-    if nombre.lower().strip() < actual.lower().strip(): 
-        return buscar_producto(productos, nombre, inicio, medio - 1)
-    return buscar_producto(productos, nombre, medio + 1, fin)
+     if not atraccion_actual.visitantes.is_empty(): 
+        while not self.atracciones.is_empty():
+            temp.enqueue(self.atracciones.dequeue())
+        self.atracciones = temp 
+        return True
+
     
+     return self.hay_visitantes(temp)  
 
 
-def precio_total(productos, indice=0):
-    if indice == len(productos):
-        return 0
-    return productos[indice]["precio"] + precio_total(productos, indice + 1)
+    def agregar_atraccion(self, nombre, capacidad):
+        """Agrega una nueva atracción al final de la cola"""
+        print(f"\n Atracción '{nombre}' agregada con capacidad {capacidad}.")
+
+    def eliminar_atraccion(self, nombre):
+        """Elimina una atracción y pasa sus visitantes a la siguiente"""
+        nueva_cola = Queue()
+        encontrada = False 
+
+        while not self.atracciones.is_empty():
+            atraccion = self.atracciones.dequeue()
+            if atraccion.nombre == nombre:
+                encontrada = True
+              
+                if not self.atracciones.is_empty(): 
+                    siguiente = self.atracciones.first() 
+                    while not atraccion.visitantes.is_empty():
+                        siguiente.agregar_visitante(atraccion.visitantes.pop())
+                print(f"\n⚠️ Atracción '{nombre}' eliminada.")
+            else:
+                nueva_cola.enqueue(atraccion)
+
+        self.atracciones = nueva_cola 
+        if not encontrada:
+            print(f"\n No se encontró la atracción '{nombre}'.")
 
 
-def acumular(productos, i=0, acum=None):
-    if acum is None:
-        acum = {} 
-    if i == len(productos):
-        return acum
-    
-    cat = productos[i]["categoria"]
-    precio = productos[i]["precio"]
-
-    if cat not in acum:
-        acum[cat] = {"suma": 0, "n": 0} 
-    acum[cat]["suma"] += precio
-    acum[cat]["n"] += 1
-    
-    return acumular(productos, i + 1, acum)
-
-
-def promedio_por_categoria(productos, i=0, acum=None):
-    if acum is None:
-        acum = {}
-    if i == len(productos):
-        return calcular_promedios(list(acum.items()))
-
-    prod = productos[i]
-    cat = prod["categoria"]  
-    precio = prod["precio"] 
-
-   
-    if cat not in acum:
-        acum[cat] = {"suma": 0, "n": 0}
-
-    acum[cat]["suma"] += precio
-    acum[cat]["n"] += 1
-    return promedio_por_categoria(productos, i + 1, acum)
-
-
-def calcular_promedios(items, resultado=None):
-    if resultado is None:
-        resultado = {}
-
-    if not items:
-        return resultado
-    cat, info = items[0]
-    resultado[cat] = info["suma"] / info["n"]
-    return calcular_promedios(items[1:], resultado)
-    
-
-def buscar_por_rango(productos, minimo, maximo, i=0):
-    if i == len(productos):
-        return [] 
-    
-    actual = productos[i]
-    if minimo <= actual["precio"] <= maximo: 
-        return [actual] + buscar_por_rango(productos, minimo, maximo, i + 1)
-    return buscar_por_rango(productos, minimo, maximo, i + 1)
-
-def recomendar_misma_categoria(productos, producto_base, i=0):
-    if i == len(productos):
-        return []
-    
-    actual = productos[i]
-    if actual["categoria"] == producto_base["categoria"] and actual["codigo"] != producto_base["codigo"]:
-        return [actual] + recomendar_misma_categoria(productos, producto_base, i + 1)
-    
-    return recomendar_misma_categoria(productos, producto_base, i + 1)
+#--------------------------------------------------------------------------------------------------------------------------------------
 
 def menu():
-    print("\n MENÚ DE LA TIENDA")
-    print("1. Ver precio total")
-    print("2. Ver promedio por categoría")
-    print("3. Buscar producto por nombre")
-    print("5. Recomendar productos de la misma categoría")
-    print("6. Salir")
+    parque = ParqueDiversiones()
 
-    opcion = input(" Elige una opción: ")
+    while True:
+        print("\n===== MENÚ PARQUE DE DIVERSIONES =====")
+        print("1. Agregar visitante")
+        print("2. Ejecutar un turno")
+        print("3. Ejecutar todos los turnos")
+        print("4. Consultar estado del sistema")
+        print("5. Agregar atracción")
+        print("6. Eliminar atracción")
+        print("0. Salir")
 
-    if opcion == "1":
-        print(f"\n🪙 Precio total: {precio_total(productos)}")
-        return menu()
+        opcion = input("Elige una opción: ")
 
-    if opcion == "2":
-        promedios = promedio_por_categoria(productos)
-        print("\n Promedio por categoría:")
-        for cat, valor in promedios.items():
-            print(f"   {cat}: {round(valor,2)}")
-        return menu()
+        if opcion == "1":
+            visitante = input("Nombre del visitante (ej: A1, N1): ")
+            parque.agregar_visitante(visitante)
+            print(f"Visitante {visitante} agregado.")
 
-    if opcion == "3":
-        nombre = input(" Escribe el nombre del producto a buscar: ")
-        resultado = buscar_producto(productos, nombre)
-        if resultado:
-            print(f" Encontrado: {resultado['nombre']} - ${resultado['precio']}")
+        elif opcion == "2":
+            parque.ejecutar_turno()
+
+        elif opcion == "3":
+            parque.ejecutar_todo()
+
+        elif opcion == "4":
+            parque.estado()
+
+        elif opcion == "5":
+            nombre = input("Nombre de la nueva atracción: ")
+            capacidad = int(input("Capacidad de la atracción por turno: "))
+            parque.agregar_atraccion(nombre, capacidad)
+
+        elif opcion == "6":
+            nombre = input("Nombre de la atracción a eliminar: ")
+            parque.eliminar_atraccion(nombre)
+
+        elif opcion == "0":
+            print(" Saliendo del sistema...")
+            break
+
         else:
-            print(" Producto no encontrado.")
-        return menu()
+            print("Opción no válida, intenta de nuevo.")
 
-    if opcion == "5":
-        nombre = input(" Escribe el nombre del producto base: ")
-        base = buscar_producto(productos, nombre)
-        if base:
-            recomendados = recomendar_misma_categoria(productos, base)
-            if recomendados:
-                print(f"\n Recomendaciones en categoría '{base['categoria']}':")
-                for p in recomendados:
-                    print(f"   {p['nombre']} - ${p['precio']}")
-            else:
-                print(" No hay recomendaciones en la misma categoría.")
-        else:
-            print(" Producto base no encontrado.")
-        return menu()
 
-    if opcion == "6":
-        print("👋 Saliendo del programa...")
-        return 
+if __name__ == "__main__":
+    menu()
 
-    print("⚠️ Opción no válida, intenta de nuevo.")
-    return menu()  
 
-menu()    
+
 
 
 
